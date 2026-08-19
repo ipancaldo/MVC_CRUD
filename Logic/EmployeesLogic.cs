@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Entities;
-using Data;
 
 namespace Logic
 {
@@ -12,7 +9,10 @@ namespace Logic
     {
         public List<Employees> GetAll()
         {
-            return context.Employees.ToList();
+            lock (syncRoot)
+            {
+                return employees.ToList();
+            }
         }
 
         public int GetLastID()
@@ -22,17 +22,17 @@ namespace Logic
 
         public Employees GetData(int id)
         {
-            try
+            lock (syncRoot)
             {
-                Employees employee = new Employees();
-                var seleccionEmpleado = context.Employees.First(e => e.EmployeeID == id);
-                return seleccionEmpleado;
+                var employee = employees.FirstOrDefault(e => e.EmployeeID == id);
+
+                if (employee == null)
+                {
+                    throw new Exception("El empleado no existe.");
+                }
+
+                return employee;
             }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-            
         }
 
         public void Add(Employees newObject)

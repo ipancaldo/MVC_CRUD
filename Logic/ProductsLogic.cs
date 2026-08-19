@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity.Infrastructure;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Data;
 using Entities;
 
 namespace Logic
@@ -13,62 +9,68 @@ namespace Logic
     {
         public List<Products> GetAll()
         {
-            return context.Products.ToList();
+            lock (syncRoot)
+            {
+                return products.ToList();
+            }
         }
 
         public Products GetData(int id)
         {
-            Products product = new Products();
-            var seleccionProducto = context.Products.FirstOrDefault(r => r.ProductID == id);
-            return seleccionProducto;
+            lock (syncRoot)
+            {
+                return products.FirstOrDefault(r => r.ProductID == id);
+            }
         }
 
         public int GetLastID()
         {
-            var seleccionProducto = context.Products.OrderByDescending(u => u.ProductID).FirstOrDefault();
-            int ultimoId = seleccionProducto.ProductID;
-
-            return ultimoId;
+            lock (syncRoot)
+            {
+                return products.Count == 0 ? 0 : products.Max(u => u.ProductID);
+            }
         }
 
         public void Add(Products newObject)
         {
-            context.Products.Add(newObject);
-            context.SaveChanges();
+            lock (syncRoot)
+            {
+                newObject.ProductID = GetLastID() + 1;
+                products.Add(newObject);
+            }
         }
 
 
         public void Delete(int id)
         {
-            var productoAEliminar = context.Products.FirstOrDefault(r => r.ProductID == id);
+            lock (syncRoot)
+            {
+                var productoAEliminar = products.FirstOrDefault(r => r.ProductID == id);
 
-            if(productoAEliminar == default(Products))
-            {
-                throw new Exception("El producto no existe.");
-            }
-            else
-            {
-                try
+                if (productoAEliminar == default(Products))
                 {
-                    context.Products.Remove(productoAEliminar);
-                    context.SaveChanges();
+                    throw new Exception("El producto no existe.");
                 }
-                catch (DbUpdateException ex)
-                {
-                    throw ex;
-                }
+                products.Remove(productoAEliminar);
             }
         }
 
         public void Update(Products objectSelected)
         {
-            var productUpdate = context.Products.Find(objectSelected.ProductID);
+            lock (syncRoot)
+            {
+                var productUpdate = products.FirstOrDefault(r => r.ProductID == objectSelected.ProductID);
 
-            productUpdate.ProductName = objectSelected.ProductName;
-            productUpdate.QuantityPerUnit = objectSelected.QuantityPerUnit;
-            productUpdate.UnitPrice = objectSelected.UnitPrice;
+                if (productUpdate == null)
+                {
+                    throw new Exception("El producto no existe.");
+                }
 
-            context.SaveChanges();
+                productUpdate.ProductName = objectSelected.ProductName;
+                productUpdate.QuantityPerUnit = objectSelected.QuantityPerUnit;
+                productUpdate.UnitPrice = objectSelected.UnitPrice;
+            }
+
         }
     }
 }

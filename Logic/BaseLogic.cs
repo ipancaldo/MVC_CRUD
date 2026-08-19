@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Data;
+﻿using System.Collections.Generic;
+using Entities;
 
 namespace Logic
 {
     public class BaseLogic
     {
-        protected readonly NorthwindContext context;
-        public BaseLogic()
-        {
-            context = new NorthwindContext();
-        }
+        protected readonly object syncRoot = InMemoryDataStore.SyncRoot;
+        protected readonly List<Products> products = InMemoryDataStore.Products;
+        protected readonly List<Employees> employees = InMemoryDataStore.Employees;
     }
 }
